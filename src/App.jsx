@@ -1,10 +1,11 @@
-import { use, useState } from "react";
+import { useState } from "react";
 import { GEMINI_BASE_URL } from "./constants";
 import "./App.css";
+import Answer from "./components/Answer";
 
 function App() {
   const [question, setQuestion] = useState("");
-  const [result, setResult] = useState(undefined)
+  const [result, setResult] = useState(undefined);
 
   const askQuestion = async () => {
     const payload = {
@@ -30,24 +31,31 @@ function App() {
 
     response = await response.json();
     let dataString = response.candidates[0].content.parts[0].text;
-    dataString = dataString.split("* ")
-    dataString = dataString.map((item)=> item.trim())
+    dataString = dataString.split("* ");
+    dataString = dataString.map((item) => item.trim());
 
-      console.log(dataString);
-      
+    console.log(dataString);
+
     // console.log(data.candidates[0].content.parts[0].text);
     setResult(dataString);
-    
-    
   };
 
   return (
-    <div className="grid grid-cols-5 h-screen  w-screen text-center bg-[#212121] text-white">
+    <div className="grid grid-cols-5 h-screen w-screen text-center bg-[#212121] text-white">
       <div className="col-span-1 bg-zinc-800"></div>
 
-      <div className="col-span-4 p-4 flex flex-col">
-        <div className=" container flex-1 mx-auto overflow-y-auto  ">
-          {result}
+      <div className="col-span-4 p-4 flex flex-col h-full overflow-hidden">
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <div className="text-white">
+            <ul>
+              {result &&
+                result.map((item, index) => (
+                  <li key={index} className="text-left p-1">
+                    <Answer ans={item} />
+                  </li>
+                ))}
+            </ul>
+          </div>
         </div>
 
         <div className="bg-zinc-800 w-full max-w-3xl p-2 pr-3 text-white mx-auto rounded-3xl border border-zinc-700 flex items-center">
