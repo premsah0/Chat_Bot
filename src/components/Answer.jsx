@@ -1,22 +1,40 @@
 import { useEffect, useState } from "react";
-import { replaceHeadingStar } from "../helper";
-import { checkHeading } from "../helper";
+import {
+  getLineType,
+  isWrappedWithDoubleStar,
+  removeWrappingDoubleStar,
+  removeInlineDoubleStar,
+} from "../helper";
 
-const Answer = ({ ans, key }) => {
-  const [heading, setHeading] = useState(false);
-  const [answer, setAnswer] = useState(ans);
+const Answer = ({ ans, totalResult, index }) => {
+  const [type, setType] = useState("normal");
+  const [cleanText, setCleanText] = useState(ans);
+
   useEffect(() => {
-    if (checkHeading(ans)) {
-      setHeading(true);
-      setAnswer(replaceHeadingStar(ans));
+    const detectedType = getLineType(ans, index, totalResult);
+    setType(detectedType);
+
+    if (isWrappedWithDoubleStar(ans)) {
+      setCleanText(removeWrappingDoubleStar(ans));
+    } else {
+      setCleanText(removeInlineDoubleStar(ans));
     }
-  }, []);
+  }, [ans, index, totalResult]);
+
   return (
     <>
-      {heading ? (
-        <span className=" py-5 block text-lg ">{answer}</span>
+      {type === "main" ? (
+        <span className="pt-3 block text-zinc-200 text-2xl font-bold">
+          {cleanText}
+        </span>
+      ) : type === "sub" ? (
+        <span className="pt-3 block text-white text-xl font-bold">
+          {cleanText}
+        </span>
       ) : (
-        <span className=" pl-5 ">{answer}</span>
+        <span className="pl-6 block text-white text-base leading-6">
+          {cleanText}
+        </span>
       )}
     </>
   );

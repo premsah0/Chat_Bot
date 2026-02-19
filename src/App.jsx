@@ -1,43 +1,64 @@
 import { useState } from "react";
-import { GEMINI_BASE_URL } from "./constants";
+import { GEMINI_BASE_URL, GEMINI_API_KEY } from "./constants";
 import "./App.css";
 import Answer from "./components/Answer";
 
 function App() {
   const [question, setQuestion] = useState("");
   const [result, setResult] = useState(undefined);
+  const [loading, setLoading] = useState(false);
 
   const askQuestion = async () => {
-    const payload = {
-      contents: [
-        {
-          parts: [
-            {
-              text: question,
-            },
-          ],
+    if (loading) return; // prevents spam clicking
+
+    setLoading(true);
+
+    try {
+      const payload = {
+        contents: [
+          {
+            parts: [
+              {
+                text: question,
+              },
+            ],
+          },
+        ],
+      };
+
+      let response = await fetch(GEMINI_BASE_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": GEMINI_API_KEY,
         },
-      ],
-    };
+        body: JSON.stringify(payload),
+      });
 
-    let response = await fetch(GEMINI_BASE_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": import.meta.env.VITE_GEMINI_API_KEY,
-      },
-      body: JSON.stringify(payload),
-    });
+      response = await response.json();
 
-    response = await response.json();
-    let dataString = response.candidates[0].content.parts[0].text;
-    dataString = dataString.split("* ");
-    dataString = dataString.map((item) => item.trim());
+      if (!response.candidates) {
+        console.log("API Error:", response);
+        alert("API limit reached or error occurred. Please try later.");
+        setLoading(false);
+        return;
+      }
 
-    console.log(dataString);
+      let text = response.candidates[0].content.parts[0].text;
 
-    // console.log(data.candidates[0].content.parts[0].text);
-    setResult(dataString);
+      text = text.replace(/^\s*[*\-•]\s+/gm, "");
+
+      let dataString = text
+        .split(/\r?\n+/)
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+
+      setResult(dataString);
+    } catch (error) {
+      console.log(error);
+    }
+
+    setLoading(false);
   };
 
   return (
@@ -50,8 +71,12 @@ function App() {
             <ul>
               {result &&
                 result.map((item, index) => (
-                  <li key={index} className="text-left p-1">
-                    <Answer ans={item} />
+                  <li key={index} className=" text-left p-1">
+                    <Answer
+                      ans={item}
+                      totalResult={result.length}
+                      index={index}
+                    />
                   </li>
                 ))}
             </ul>
@@ -68,9 +93,10 @@ function App() {
           />
           <button
             onClick={askQuestion}
-            className="px-5 py-2 rounded-2xl bg-white text-black font-medium hover:bg-zinc-200 transition"
+            disabled={loading}
+            className="px-5 py-2 rounded-2xl bg-white text-black font-medium hover:bg-zinc-200 transition disabled:opacity-50"
           >
-            Ask
+            {loading ? "Thinking..." : "Ask"}
           </button>
         </div>
       </div>
